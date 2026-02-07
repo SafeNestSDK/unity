@@ -349,9 +349,11 @@ namespace SafeNest
 
             // Extract headers
             LastRequestId = request.GetResponseHeader("x-request-id");
-            var limitStr = request.GetResponseHeader("x-usage-limit");
-            var usedStr = request.GetResponseHeader("x-usage-used");
-            var remainingStr = request.GetResponseHeader("x-usage-remaining");
+
+            // Monthly usage headers
+            var limitStr = request.GetResponseHeader("x-monthly-limit");
+            var usedStr = request.GetResponseHeader("x-monthly-used");
+            var remainingStr = request.GetResponseHeader("x-monthly-remaining");
 
             if (int.TryParse(limitStr, out int limit) &&
                 int.TryParse(usedStr, out int used) &&

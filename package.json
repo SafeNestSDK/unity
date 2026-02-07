@@ -1,6 +1,6 @@
 {
   "name": "dev.safenest.sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "SafeNest SDK",
   "description": "Official Unity SDK for SafeNest - AI-powered child safety API for content moderation, bullying detection, and grooming prevention.",
   "unity": "2021.3",
