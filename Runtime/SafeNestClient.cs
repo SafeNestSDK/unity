@@ -307,6 +307,37 @@ namespace SafeNest
         }
 
         // =====================================================================
+        // Account Management (GDPR)
+        // =====================================================================
+
+        /// <summary>
+        /// Delete all account data (GDPR Article 17 — Right to Erasure).
+        /// </summary>
+        public async Task<AccountDeletionResult> DeleteAccountDataAsync()
+        {
+            var response = await RequestAsync("DELETE", "/api/v1/account/data");
+            return new AccountDeletionResult
+            {
+                Message = response.ContainsKey("message") ? response["message"].ToString() : "",
+                DeletedCount = response.ContainsKey("deleted_count") ? Convert.ToInt32(response["deleted_count"]) : 0
+            };
+        }
+
+        /// <summary>
+        /// Export all account data as JSON (GDPR Article 20 — Right to Data Portability).
+        /// </summary>
+        public async Task<AccountExportResult> ExportAccountDataAsync()
+        {
+            var response = await RequestAsync("GET", "/api/v1/account/export");
+            return new AccountExportResult
+            {
+                UserId = response.ContainsKey("userId") ? response["userId"].ToString() : "",
+                ExportedAt = response.ContainsKey("exportedAt") ? response["exportedAt"].ToString() : "",
+                Data = response.ContainsKey("data") ? response["data"] as Dictionary<string, object> : new Dictionary<string, object>()
+            };
+        }
+
+        // =====================================================================
         // Private Methods
         // =====================================================================
 
@@ -314,13 +345,21 @@ namespace SafeNest
             string path,
             Dictionary<string, object> body)
         {
+            return await RequestAsync("POST", path, body);
+        }
+
+        private async Task<Dictionary<string, object>> RequestAsync(
+            string method,
+            string path,
+            Dictionary<string, object> body = null)
+        {
             Exception lastError = null;
 
             for (int attempt = 0; attempt < _maxRetries; attempt++)
             {
                 try
                 {
-                    return await PerformRequestAsync(path, body);
+                    return await PerformRequestAsync(method, path, body);
                 }
                 catch (AuthenticationException) { throw; }
                 catch (ValidationException) { throw; }
@@ -339,16 +378,18 @@ namespace SafeNest
         }
 
         private async Task<Dictionary<string, object>> PerformRequestAsync(
+            string method,
             string path,
             Dictionary<string, object> body)
         {
             var url = _baseUrl + path;
-            var json = JsonUtility.ToJson(new JsonWrapper { data = body });
-            // Use simple JSON serialization
-            json = SerializeToJson(body);
 
-            using var request = new UnityWebRequest(url, "POST");
-            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            using var request = new UnityWebRequest(url, method);
+            if (body != null)
+            {
+                var json = SerializeToJson(body);
+                request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            }
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Authorization", $"Bearer {_apiKey}");
             request.SetRequestHeader("Content-Type", "application/json");

@@ -299,6 +299,31 @@ namespace SafeNest
         public Dictionary<string, object> Metadata;
     }
 
+    // =========================================================================
+    // Account Management (GDPR)
+    // =========================================================================
+
+    /// <summary>
+    /// Result of account data deletion (GDPR Article 17).
+    /// </summary>
+    [Serializable]
+    public class AccountDeletionResult
+    {
+        public string Message;
+        public int DeletedCount;
+    }
+
+    /// <summary>
+    /// Result of account data export (GDPR Article 20).
+    /// </summary>
+    [Serializable]
+    public class AccountExportResult
+    {
+        public string UserId;
+        public string ExportedAt;
+        public Dictionary<string, object> Data;
+    }
+
     /// <summary>
     /// API usage information.
     /// </summary>
