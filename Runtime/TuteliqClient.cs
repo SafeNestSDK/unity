@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace SafeNest
+namespace Tuteliq
 {
     /// <summary>
-    /// SafeNest API client for child safety analysis.
+    /// Tuteliq API client for child safety analysis.
     /// </summary>
     /// <example>
     /// <code>
-    /// var client = new SafeNestClient("your-api-key");
+    /// var client = new TuteliqClient("your-api-key");
     /// var result = await client.DetectBullyingAsync("Some text to analyze");
     /// if (result.IsBullying)
     /// {
@@ -21,9 +21,9 @@ namespace SafeNest
     /// }
     /// </code>
     /// </example>
-    public class SafeNestClient
+    public class TuteliqClient
     {
-        private const string DefaultBaseUrl = "https://api.safenest.dev";
+        private const string DefaultBaseUrl = "https://api.tuteliq.ai";
 
         private readonly string _apiKey;
         private readonly string _baseUrl;
@@ -42,14 +42,14 @@ namespace SafeNest
         public string LastRequestId { get; private set; }
 
         /// <summary>
-        /// Creates a new SafeNest client.
+        /// Creates a new Tuteliq client.
         /// </summary>
-        /// <param name="apiKey">Your SafeNest API key.</param>
+        /// <param name="apiKey">Your Tuteliq API key.</param>
         /// <param name="timeout">Request timeout in seconds (default: 30).</param>
         /// <param name="maxRetries">Number of retry attempts (default: 3).</param>
         /// <param name="retryDelay">Initial retry delay in seconds (default: 1).</param>
         /// <param name="baseUrl">API base URL.</param>
-        public SafeNestClient(
+        public TuteliqClient(
             string apiKey,
             float timeout = 30f,
             int maxRetries = 3,
@@ -337,6 +337,222 @@ namespace SafeNest
             };
         }
 
+        /// <summary>
+        /// Record user consent (GDPR Article 7).
+        /// </summary>
+        public async Task<ConsentActionResult> RecordConsentAsync(RecordConsentInput input)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "consent_type", input.ConsentType },
+                { "version", input.Version }
+            };
+            var response = await RequestAsync("POST", "/api/v1/account/consent", body);
+            return ParseConsentActionResult(response);
+        }
+
+        /// <summary>
+        /// Get current consent status (GDPR Article 7).
+        /// </summary>
+        public async Task<ConsentStatusResult> GetConsentStatusAsync(string consentType = null)
+        {
+            var query = consentType != null ? $"?type={consentType}" : "";
+            var response = await RequestAsync("GET", $"/api/v1/account/consent{query}");
+            var consents = new List<ConsentRecord>();
+            if (response.ContainsKey("consents") && response["consents"] is List<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        consents.Add(ParseConsentRecord(dict));
+                }
+            }
+            return new ConsentStatusResult { Consents = consents };
+        }
+
+        /// <summary>
+        /// Withdraw consent (GDPR Article 7.3).
+        /// </summary>
+        public async Task<ConsentActionResult> WithdrawConsentAsync(string consentType)
+        {
+            var response = await RequestAsync("DELETE", $"/api/v1/account/consent/{consentType}");
+            return ParseConsentActionResult(response);
+        }
+
+        /// <summary>
+        /// Rectify user data (GDPR Article 16 — Right to Rectification).
+        /// </summary>
+        public async Task<RectifyDataResult> RectifyDataAsync(RectifyDataInput input)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "collection", input.Collection },
+                { "document_id", input.DocumentId },
+                { "fields", input.Fields }
+            };
+            var response = await RequestAsync("PATCH", "/api/v1/account/data", body);
+            var updatedFields = new List<string>();
+            if (response.ContainsKey("updated_fields") && response["updated_fields"] is List<object> list)
+            {
+                foreach (var item in list) updatedFields.Add(item.ToString());
+            }
+            return new RectifyDataResult
+            {
+                Message = response.ContainsKey("message") ? response["message"].ToString() : "",
+                UpdatedFields = updatedFields
+            };
+        }
+
+        /// <summary>
+        /// Get audit logs (GDPR Article 15 — Right of Access).
+        /// </summary>
+        public async Task<AuditLogsResult> GetAuditLogsAsync(string action = null, int? limit = null)
+        {
+            var parameters = new List<string>();
+            if (action != null) parameters.Add($"action={action}");
+            if (limit.HasValue) parameters.Add($"limit={limit.Value}");
+            var query = parameters.Count > 0 ? $"?{string.Join("&", parameters)}" : "";
+            var response = await RequestAsync("GET", $"/api/v1/account/audit-logs{query}");
+            var logs = new List<AuditLogEntry>();
+            if (response.ContainsKey("audit_logs") && response["audit_logs"] is List<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                    {
+                        logs.Add(new AuditLogEntry
+                        {
+                            Id = dict.ContainsKey("id") ? dict["id"].ToString() : "",
+                            UserId = dict.ContainsKey("user_id") ? dict["user_id"].ToString() : "",
+                            Action = dict.ContainsKey("action") ? dict["action"].ToString() : "",
+                            CreatedAt = dict.ContainsKey("created_at") ? dict["created_at"].ToString() : "",
+                        });
+                    }
+                }
+            }
+            return new AuditLogsResult { AuditLogs = logs };
+        }
+
+        // =====================================================================
+        // Breach Management (GDPR Article 33/34)
+        // =====================================================================
+
+        /// <summary>
+        /// Log a new data breach.
+        /// </summary>
+        public async Task<LogBreachResult> LogBreachAsync(LogBreachInput input)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "title", input.Title },
+                { "description", input.Description },
+                { "severity", input.Severity },
+                { "affected_user_ids", input.AffectedUserIds },
+                { "data_categories", input.DataCategories },
+                { "reported_by", input.ReportedBy }
+            };
+            var response = await RequestAsync("/api/v1/admin/breach", body);
+            return new LogBreachResult
+            {
+                Message = GetString(response, "message"),
+                Breach = ParseBreachRecord(response.ContainsKey("breach") && response["breach"] is Dictionary<string, object> d ? d : new Dictionary<string, object>())
+            };
+        }
+
+        /// <summary>
+        /// List data breaches.
+        /// </summary>
+        public async Task<BreachListResult> ListBreachesAsync(string status = null, int? limit = null)
+        {
+            var parameters = new List<string>();
+            if (status != null) parameters.Add($"status={status}");
+            if (limit.HasValue) parameters.Add($"limit={limit.Value}");
+            var query = parameters.Count > 0 ? $"?{string.Join("&", parameters)}" : "";
+            var response = await RequestAsync("GET", $"/api/v1/admin/breach{query}");
+            var breaches = new List<BreachRecord>();
+            if (response.ContainsKey("breaches") && response["breaches"] is List<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        breaches.Add(ParseBreachRecord(dict));
+                }
+            }
+            return new BreachListResult { Breaches = breaches };
+        }
+
+        /// <summary>
+        /// Get a single breach by ID.
+        /// </summary>
+        public async Task<BreachResult> GetBreachAsync(string id)
+        {
+            var response = await RequestAsync("GET", $"/api/v1/admin/breach/{id}");
+            return new BreachResult
+            {
+                Breach = ParseBreachRecord(response.ContainsKey("breach") && response["breach"] is Dictionary<string, object> d ? d : new Dictionary<string, object>())
+            };
+        }
+
+        /// <summary>
+        /// Update a breach's status.
+        /// </summary>
+        public async Task<BreachResult> UpdateBreachStatusAsync(string id, UpdateBreachInput input)
+        {
+            var body = new Dictionary<string, object> { { "status", input.Status } };
+            if (input.NotificationStatus != null) body["notification_status"] = input.NotificationStatus;
+            if (input.Notes != null) body["notes"] = input.Notes;
+            var response = await RequestAsync("PATCH", $"/api/v1/admin/breach/{id}", body);
+            return new BreachResult
+            {
+                Breach = ParseBreachRecord(response.ContainsKey("breach") && response["breach"] is Dictionary<string, object> d ? d : new Dictionary<string, object>())
+            };
+        }
+
+        private BreachRecord ParseBreachRecord(Dictionary<string, object> data)
+        {
+            return new BreachRecord
+            {
+                Id = GetString(data, "id"),
+                Title = GetString(data, "title"),
+                Description = GetString(data, "description"),
+                Severity = GetString(data, "severity"),
+                Status = GetString(data, "status"),
+                NotificationStatus = GetString(data, "notification_status"),
+                AffectedUserIds = GetStringList(data, "affected_user_ids"),
+                DataCategories = GetStringList(data, "data_categories"),
+                ReportedBy = GetString(data, "reported_by"),
+                NotificationDeadline = GetString(data, "notification_deadline"),
+                CreatedAt = GetString(data, "created_at"),
+                UpdatedAt = GetString(data, "updated_at"),
+            };
+        }
+
+        private ConsentActionResult ParseConsentActionResult(Dictionary<string, object> response)
+        {
+            var result = new ConsentActionResult
+            {
+                Message = response.ContainsKey("message") ? response["message"].ToString() : "",
+            };
+            if (response.ContainsKey("consent") && response["consent"] is Dictionary<string, object> dict)
+            {
+                result.Consent = ParseConsentRecord(dict);
+            }
+            return result;
+        }
+
+        private ConsentRecord ParseConsentRecord(Dictionary<string, object> dict)
+        {
+            return new ConsentRecord
+            {
+                Id = dict.ContainsKey("id") ? dict["id"].ToString() : "",
+                UserId = dict.ContainsKey("user_id") ? dict["user_id"].ToString() : "",
+                ConsentType = dict.ContainsKey("consent_type") ? dict["consent_type"].ToString() : "",
+                Status = dict.ContainsKey("status") ? dict["status"].ToString() : "",
+                Version = dict.ContainsKey("version") ? dict["version"].ToString() : "",
+                CreatedAt = dict.ContainsKey("created_at") ? dict["created_at"].ToString() : "",
+            };
+        }
+
         // =====================================================================
         // Private Methods
         // =====================================================================
@@ -374,7 +590,7 @@ namespace SafeNest
                 }
             }
 
-            throw lastError ?? new SafeNestException("Request failed after retries");
+            throw lastError ?? new TuteliqException("Request failed after retries");
         }
 
         private async Task<Dictionary<string, object>> PerformRequestAsync(
@@ -450,7 +666,7 @@ namespace SafeNest
                 404 => new NotFoundException(message, details),
                 429 => new RateLimitException(message, details),
                 >= 500 => new ServerException(message, status, details),
-                _ => new SafeNestException(message, details)
+                _ => new TuteliqException(message, details)
             };
         }
 

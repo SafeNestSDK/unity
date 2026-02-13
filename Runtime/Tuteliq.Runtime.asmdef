@@ -1,6 +1,6 @@
 {
-    "name": "SafeNest.Runtime",
-    "rootNamespace": "SafeNest",
+    "name": "Tuteliq.Runtime",
+    "rootNamespace": "Tuteliq",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

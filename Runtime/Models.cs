@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SafeNest
+namespace Tuteliq
 {
     // =========================================================================
     // Context
@@ -324,6 +324,70 @@ namespace SafeNest
         public Dictionary<string, object> Data;
     }
 
+    // =========================================================================
+    // Consent Management (GDPR Article 7)
+    // =========================================================================
+
+    [Serializable]
+    public class ConsentRecord
+    {
+        public string Id;
+        public string UserId;
+        public string ConsentType;
+        public string Status;
+        public string Version;
+        public string CreatedAt;
+    }
+
+    [Serializable]
+    public class ConsentActionResult
+    {
+        public string Message;
+        public ConsentRecord Consent;
+    }
+
+    [Serializable]
+    public class ConsentStatusResult
+    {
+        public List<ConsentRecord> Consents;
+    }
+
+    public class RecordConsentInput
+    {
+        public string ConsentType;
+        public string Version;
+    }
+
+    public class RectifyDataInput
+    {
+        public string Collection;
+        public string DocumentId;
+        public Dictionary<string, object> Fields;
+    }
+
+    [Serializable]
+    public class RectifyDataResult
+    {
+        public string Message;
+        public List<string> UpdatedFields;
+    }
+
+    [Serializable]
+    public class AuditLogEntry
+    {
+        public string Id;
+        public string UserId;
+        public string Action;
+        public string CreatedAt;
+        public Dictionary<string, object> Details;
+    }
+
+    [Serializable]
+    public class AuditLogsResult
+    {
+        public List<AuditLogEntry> AuditLogs;
+    }
+
     /// <summary>
     /// API usage information.
     /// </summary>
@@ -333,5 +397,62 @@ namespace SafeNest
         public int Limit;
         public int Used;
         public int Remaining;
+    }
+
+    // =========================================================================
+    // Breach Management (GDPR Article 33/34)
+    // =========================================================================
+
+    public class LogBreachInput
+    {
+        public string Title;
+        public string Description;
+        public string Severity;
+        public List<string> AffectedUserIds;
+        public List<string> DataCategories;
+        public string ReportedBy;
+    }
+
+    public class UpdateBreachInput
+    {
+        public string Status;
+        public string NotificationStatus;
+        public string Notes;
+    }
+
+    [Serializable]
+    public class BreachRecord
+    {
+        public string Id;
+        public string Title;
+        public string Description;
+        public string Severity;
+        public string Status;
+        public string NotificationStatus;
+        public List<string> AffectedUserIds;
+        public List<string> DataCategories;
+        public string ReportedBy;
+        public string NotificationDeadline;
+        public string CreatedAt;
+        public string UpdatedAt;
+    }
+
+    [Serializable]
+    public class LogBreachResult
+    {
+        public string Message;
+        public BreachRecord Breach;
+    }
+
+    [Serializable]
+    public class BreachListResult
+    {
+        public List<BreachRecord> Breaches;
+    }
+
+    [Serializable]
+    public class BreachResult
+    {
+        public BreachRecord Breach;
     }
 }

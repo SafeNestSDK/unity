@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in the SafeNest Unity SDK
+about: Report a bug in the Tuteliq Unity SDK
 title: "[Bug] "
 labels: bug
 assignees: ""

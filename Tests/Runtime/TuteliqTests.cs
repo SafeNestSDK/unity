@@ -2,33 +2,33 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
-namespace SafeNest.Tests
+namespace Tuteliq.Tests
 {
-    public class SafeNestClientTests
+    public class TuteliqClientTests
     {
         [Test]
         public void Constructor_ValidApiKey_CreatesClient()
         {
-            var client = new SafeNestClient("test-api-key-12345");
+            var client = new TuteliqClient("test-api-key-12345");
             Assert.IsNotNull(client);
         }
 
         [Test]
         public void Constructor_EmptyApiKey_ThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException>(() => new SafeNestClient(""));
+            Assert.Throws<ArgumentException>(() => new TuteliqClient(""));
         }
 
         [Test]
         public void Constructor_ShortApiKey_ThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException>(() => new SafeNestClient("short"));
+            Assert.Throws<ArgumentException>(() => new TuteliqClient("short"));
         }
 
         [Test]
         public void Constructor_WithOptions_CreatesClient()
         {
-            var client = new SafeNestClient(
+            var client = new TuteliqClient(
                 apiKey: "test-api-key-12345",
                 timeout: 60f,
                 maxRetries: 5,
@@ -181,17 +181,17 @@ namespace SafeNest.Tests
     public class ErrorTests
     {
         [Test]
-        public void SafeNestException_HasMessage()
+        public void TuteliqException_HasMessage()
         {
-            var error = new SafeNestException("Test error");
+            var error = new TuteliqException("Test error");
             Assert.AreEqual("Test error", error.Message);
         }
 
         [Test]
-        public void SafeNestException_HasDetails()
+        public void TuteliqException_HasDetails()
         {
             var details = new { code = 123 };
-            var error = new SafeNestException("Test error", details);
+            var error = new TuteliqException("Test error", details);
             Assert.AreEqual(details, error.Details);
         }
 

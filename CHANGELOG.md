@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Initial release
-- Full support for all SafeNest API endpoints
+- Full support for all Tuteliq API endpoints
 - Bullying detection
 - Grooming detection
 - Unsafe content detection

@@ -1,4 +1,4 @@
-namespace SafeNest
+namespace Tuteliq
 {
     /// <summary>
     /// Severity level for detected issues.

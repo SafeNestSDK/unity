@@ -28,7 +28,7 @@ jobs:
 
       - name: Check required files
         run: |
-          files=("README.md" "LICENSE.md" "CHANGELOG.md" "Runtime/SafeNest.Runtime.asmdef")
+          files=("README.md" "LICENSE.md" "CHANGELOG.md" "Runtime/Tuteliq.Runtime.asmdef")
           for file in "${files[@]}"; do
             if [ ! -f "$file" ]; then
               echo "Missing required file: $file"

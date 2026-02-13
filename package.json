@@ -1,15 +1,15 @@
 {
-  "name": "dev.safenest.sdk",
-  "version": "1.1.0",
-  "displayName": "SafeNest SDK",
-  "description": "Official Unity SDK for SafeNest - AI-powered child safety API for content moderation, bullying detection, and grooming prevention.",
+  "name": "dev.tuteliq.sdk",
+  "version": "1.2.0",
+  "displayName": "Tuteliq SDK",
+  "description": "Official Unity SDK for Tuteliq - AI-powered child safety API for content moderation, bullying detection, and grooming prevention.",
   "unity": "2021.3",
   "unityRelease": "0f1",
-  "documentationUrl": "https://api.safenest.dev/docs",
-  "changelogUrl": "https://github.com/SafeNestSDK/unity/blob/main/CHANGELOG.md",
-  "licensesUrl": "https://github.com/SafeNestSDK/unity/blob/main/LICENSE.md",
+  "documentationUrl": "https://api.tuteliq.ai/docs",
+  "changelogUrl": "https://github.com/Tuteliq/unity/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Tuteliq/unity/blob/main/LICENSE.md",
   "keywords": [
-    "safenest",
+    "tuteliq",
     "child-safety",
     "content-moderation",
     "ai",
@@ -18,18 +18,18 @@
     "grooming-prevention"
   ],
   "author": {
-    "name": "SafeNest",
-    "email": "sales@safenest.dev",
-    "url": "https://safenest.dev"
+    "name": "Tuteliq",
+    "email": "sales@tuteliq.ai",
+    "url": "https://tuteliq.ai"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SafeNestSDK/unity.git"
+    "url": "https://github.com/Tuteliq/unity.git"
   },
   "samples": [
     {
       "displayName": "Basic Usage",
-      "description": "Basic example of using the SafeNest SDK",
+      "description": "Basic example of using the Tuteliq SDK",
       "path": "Samples~/BasicUsage"
     }
   ]

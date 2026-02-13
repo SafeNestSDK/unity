@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace SafeNest
+namespace Tuteliq
 {
     internal static class MiniJson
     {
