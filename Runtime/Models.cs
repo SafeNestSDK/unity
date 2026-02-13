@@ -455,4 +455,213 @@ namespace Tuteliq
     {
         public BreachRecord Breach;
     }
+
+    // =========================================================================
+    // Voice Analysis
+    // =========================================================================
+
+    [Serializable]
+    public class TranscriptionSegment
+    {
+        public double Start;
+        public double End;
+        public string Text;
+    }
+
+    [Serializable]
+    public class TranscriptionResult
+    {
+        public string Text;
+        public string Language;
+        public double? Duration;
+        public List<TranscriptionSegment> Segments;
+    }
+
+    [Serializable]
+    public class VoiceAnalysisResult
+    {
+        public string FileId;
+        public TranscriptionResult Transcription;
+        public Dictionary<string, object> Analysis;
+        public double? OverallRiskScore;
+        public string OverallSeverity;
+        public string ExternalId;
+        public string CustomerId;
+        public Dictionary<string, object> Metadata;
+    }
+
+    // =========================================================================
+    // Image Analysis
+    // =========================================================================
+
+    [Serializable]
+    public class VisionResult
+    {
+        public string ExtractedText;
+        public List<string> VisualCategories;
+        public string VisualSeverity;
+        public double? VisualConfidence;
+        public string VisualDescription;
+        public bool? ContainsText;
+        public bool? ContainsFaces;
+    }
+
+    [Serializable]
+    public class ImageAnalysisResult
+    {
+        public string FileId;
+        public VisionResult Vision;
+        public Dictionary<string, object> TextAnalysis;
+        public double? OverallRiskScore;
+        public string OverallSeverity;
+        public string ExternalId;
+        public string CustomerId;
+        public Dictionary<string, object> Metadata;
+    }
+
+    // =========================================================================
+    // Webhooks
+    // =========================================================================
+
+    [Serializable]
+    public class WebhookInfo
+    {
+        public string Id;
+        public string Url;
+        public List<string> Events;
+        public bool Active;
+        public string Secret;
+        public string CreatedAt;
+        public string UpdatedAt;
+    }
+
+    [Serializable]
+    public class WebhookListResult
+    {
+        public List<WebhookInfo> Webhooks;
+    }
+
+    public class CreateWebhookInput
+    {
+        public string Url;
+        public List<string> Events;
+        public bool Active = true;
+    }
+
+    [Serializable]
+    public class CreateWebhookResult
+    {
+        public string Message;
+        public WebhookInfo Webhook;
+    }
+
+    public class UpdateWebhookInput
+    {
+        public string Url;
+        public List<string> Events;
+        public bool? Active;
+    }
+
+    [Serializable]
+    public class UpdateWebhookResult
+    {
+        public string Message;
+        public WebhookInfo Webhook;
+    }
+
+    [Serializable]
+    public class DeleteWebhookResult
+    {
+        public string Message;
+    }
+
+    [Serializable]
+    public class TestWebhookResult
+    {
+        public string Message;
+        public int? StatusCode;
+    }
+
+    [Serializable]
+    public class RegenerateSecretResult
+    {
+        public string Message;
+        public string Secret;
+    }
+
+    // =========================================================================
+    // Pricing
+    // =========================================================================
+
+    [Serializable]
+    public class PricingPlan
+    {
+        public string Name;
+        public string Price;
+        public string Messages;
+        public List<string> Features;
+    }
+
+    [Serializable]
+    public class PricingResult
+    {
+        public List<PricingPlan> Plans;
+    }
+
+    [Serializable]
+    public class PricingDetailPlan
+    {
+        public string Name;
+        public string Tier;
+        public Dictionary<string, object> Price;
+        public Dictionary<string, object> Limits;
+        public Dictionary<string, object> Features;
+        public List<string> Endpoints;
+    }
+
+    [Serializable]
+    public class PricingDetailsResult
+    {
+        public List<PricingDetailPlan> Plans;
+    }
+
+    // =========================================================================
+    // Usage
+    // =========================================================================
+
+    [Serializable]
+    public class UsageDay
+    {
+        public string Date;
+        public int TotalRequests;
+        public int SuccessRequests;
+        public int ErrorRequests;
+    }
+
+    [Serializable]
+    public class UsageHistoryResult
+    {
+        public string ApiKeyId;
+        public List<UsageDay> Days;
+    }
+
+    [Serializable]
+    public class UsageByToolResult
+    {
+        public string Date;
+        public Dictionary<string, int> Tools;
+        public Dictionary<string, int> Endpoints;
+    }
+
+    [Serializable]
+    public class UsageMonthlyResult
+    {
+        public string Tier;
+        public string TierDisplayName;
+        public Dictionary<string, object> Billing;
+        public Dictionary<string, object> UsageInfo;
+        public Dictionary<string, object> RateLimit;
+        public Dictionary<string, object> Recommendations;
+        public Dictionary<string, object> Links;
+    }
 }

@@ -24,6 +24,7 @@ namespace Tuteliq
     public class TuteliqClient
     {
         private const string DefaultBaseUrl = "https://api.tuteliq.ai";
+        private const string SdkIdentifier = "Unity SDK";
 
         private readonly string _apiKey;
         private readonly string _baseUrl;
@@ -83,7 +84,10 @@ namespace Tuteliq
             Dictionary<string, object> metadata = null)
         {
             var body = new Dictionary<string, object> { { "text", content } };
-            if (context != null) body["context"] = ContextToDict(context);
+            if (context != null)
+                body["context"] = ContextToDict(context);
+            else
+                body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
             if (externalId != null) body["external_id"] = externalId;
             if (customerId != null) body["customer_id"] = customerId;
             if (metadata != null) body["metadata"] = metadata;
@@ -116,7 +120,9 @@ namespace Tuteliq
                 foreach (var kvp in ContextToDict(input.Context))
                     context[kvp.Key] = kvp.Value;
             }
-            if (context.Count > 0) body["context"] = context;
+            if (!context.ContainsKey("platform"))
+                context["platform"] = ResolvePlatform();
+            body["context"] = context;
 
             if (input.ExternalId != null) body["external_id"] = input.ExternalId;
             if (input.CustomerId != null) body["customer_id"] = input.CustomerId;
@@ -137,7 +143,10 @@ namespace Tuteliq
             Dictionary<string, object> metadata = null)
         {
             var body = new Dictionary<string, object> { { "text", content } };
-            if (context != null) body["context"] = ContextToDict(context);
+            if (context != null)
+                body["context"] = ContextToDict(context);
+            else
+                body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
             if (externalId != null) body["external_id"] = externalId;
             if (customerId != null) body["customer_id"] = customerId;
             if (metadata != null) body["metadata"] = metadata;
@@ -238,7 +247,10 @@ namespace Tuteliq
                     }
                 }
             };
-            if (context != null) body["context"] = ContextToDict(context);
+            if (context != null)
+                body["context"] = ContextToDict(context);
+            else
+                body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
             if (externalId != null) body["external_id"] = externalId;
             if (customerId != null) body["customer_id"] = customerId;
             if (metadata != null) body["metadata"] = metadata;
@@ -259,7 +271,8 @@ namespace Tuteliq
             var body = new Dictionary<string, object>
             {
                 { "role", (input.Audience ?? Audience.Parent).ToApiString() },
-                { "situation", input.Situation }
+                { "situation", input.Situation },
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
             };
 
             if (input.ChildAge.HasValue) body["child_age"] = input.ChildAge.Value;
@@ -297,6 +310,8 @@ namespace Tuteliq
             if (input.ChildAge.HasValue) meta["child_age"] = input.ChildAge.Value;
             if (input.IncidentType != null) meta["type"] = input.IncidentType;
             if (meta.Count > 0) body["meta"] = meta;
+
+            body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
 
             if (input.ExternalId != null) body["external_id"] = input.ExternalId;
             if (input.CustomerId != null) body["customer_id"] = input.CustomerId;
@@ -345,7 +360,8 @@ namespace Tuteliq
             var body = new Dictionary<string, object>
             {
                 { "consent_type", input.ConsentType },
-                { "version", input.Version }
+                { "version", input.Version },
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
             };
             var response = await RequestAsync("POST", "/api/v1/account/consent", body);
             return ParseConsentActionResult(response);
@@ -388,7 +404,8 @@ namespace Tuteliq
             {
                 { "collection", input.Collection },
                 { "document_id", input.DocumentId },
-                { "fields", input.Fields }
+                { "fields", input.Fields },
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
             };
             var response = await RequestAsync("PATCH", "/api/v1/account/data", body);
             var updatedFields = new List<string>();
@@ -449,7 +466,8 @@ namespace Tuteliq
                 { "severity", input.Severity },
                 { "affected_user_ids", input.AffectedUserIds },
                 { "data_categories", input.DataCategories },
-                { "reported_by", input.ReportedBy }
+                { "reported_by", input.ReportedBy },
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
             };
             var response = await RequestAsync("/api/v1/admin/breach", body);
             return new LogBreachResult
@@ -501,6 +519,7 @@ namespace Tuteliq
             var body = new Dictionary<string, object> { { "status", input.Status } };
             if (input.NotificationStatus != null) body["notification_status"] = input.NotificationStatus;
             if (input.Notes != null) body["notes"] = input.Notes;
+            body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
             var response = await RequestAsync("PATCH", $"/api/v1/admin/breach/{id}", body);
             return new BreachResult
             {
@@ -554,6 +573,222 @@ namespace Tuteliq
         }
 
         // =====================================================================
+        // Voice Analysis
+        // =====================================================================
+
+        /// <summary>
+        /// Analyze voice/audio content for safety concerns.
+        /// </summary>
+        public async Task<VoiceAnalysisResult> AnalyzeVoiceAsync(
+            byte[] file,
+            string filename,
+            string analysisType = "all",
+            string fileId = null,
+            string externalId = null,
+            string customerId = null,
+            Dictionary<string, object> metadata = null,
+            string ageGroup = null,
+            string language = null,
+            string platform = null,
+            int? childAge = null)
+        {
+            var formSections = new List<IMultipartFormSection>();
+            formSections.Add(new MultipartFormFileSection("file", file, filename, "application/octet-stream"));
+            formSections.Add(new MultipartFormDataSection("analysis_type", analysisType));
+            formSections.Add(new MultipartFormDataSection("platform", ResolvePlatform(platform)));
+            if (fileId != null) formSections.Add(new MultipartFormDataSection("file_id", fileId));
+            if (externalId != null) formSections.Add(new MultipartFormDataSection("external_id", externalId));
+            if (customerId != null) formSections.Add(new MultipartFormDataSection("customer_id", customerId));
+            if (metadata != null) formSections.Add(new MultipartFormDataSection("metadata", MiniJson.Serialize(metadata)));
+            if (ageGroup != null) formSections.Add(new MultipartFormDataSection("age_group", ageGroup));
+            if (language != null) formSections.Add(new MultipartFormDataSection("language", language));
+            if (childAge.HasValue) formSections.Add(new MultipartFormDataSection("child_age", childAge.Value.ToString()));
+
+            var data = await MultipartRequestAsync("/api/v1/safety/voice", formSections);
+            return ParseVoiceAnalysisResult(data);
+        }
+
+        // =====================================================================
+        // Image Analysis
+        // =====================================================================
+
+        /// <summary>
+        /// Analyze image content for safety concerns.
+        /// </summary>
+        public async Task<ImageAnalysisResult> AnalyzeImageAsync(
+            byte[] file,
+            string filename,
+            string analysisType = "all",
+            string fileId = null,
+            string externalId = null,
+            string customerId = null,
+            Dictionary<string, object> metadata = null,
+            string ageGroup = null,
+            string language = null,
+            string platform = null,
+            int? childAge = null)
+        {
+            var formSections = new List<IMultipartFormSection>();
+            formSections.Add(new MultipartFormFileSection("file", file, filename, "application/octet-stream"));
+            formSections.Add(new MultipartFormDataSection("analysis_type", analysisType));
+            formSections.Add(new MultipartFormDataSection("platform", ResolvePlatform(platform)));
+            if (fileId != null) formSections.Add(new MultipartFormDataSection("file_id", fileId));
+            if (externalId != null) formSections.Add(new MultipartFormDataSection("external_id", externalId));
+            if (customerId != null) formSections.Add(new MultipartFormDataSection("customer_id", customerId));
+            if (metadata != null) formSections.Add(new MultipartFormDataSection("metadata", MiniJson.Serialize(metadata)));
+            if (ageGroup != null) formSections.Add(new MultipartFormDataSection("age_group", ageGroup));
+            if (language != null) formSections.Add(new MultipartFormDataSection("language", language));
+            if (childAge.HasValue) formSections.Add(new MultipartFormDataSection("child_age", childAge.Value.ToString()));
+
+            var data = await MultipartRequestAsync("/api/v1/safety/image", formSections);
+            return ParseImageAnalysisResult(data);
+        }
+
+        // =====================================================================
+        // Webhooks
+        // =====================================================================
+
+        /// <summary>
+        /// List all webhooks.
+        /// </summary>
+        public async Task<WebhookListResult> ListWebhooksAsync()
+        {
+            var response = await RequestAsync("GET", "/api/v1/webhooks");
+            return ParseWebhookListResult(response);
+        }
+
+        /// <summary>
+        /// Create a new webhook.
+        /// </summary>
+        public async Task<CreateWebhookResult> CreateWebhookAsync(CreateWebhookInput input)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "url", input.Url },
+                { "events", input.Events },
+                { "active", input.Active },
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
+            };
+            var response = await RequestAsync("POST", "/api/v1/webhooks", body);
+            return ParseCreateWebhookResult(response);
+        }
+
+        /// <summary>
+        /// Update an existing webhook.
+        /// </summary>
+        public async Task<UpdateWebhookResult> UpdateWebhookAsync(string webhookId, UpdateWebhookInput input)
+        {
+            var body = new Dictionary<string, object>();
+            if (input.Url != null) body["url"] = input.Url;
+            if (input.Events != null) body["events"] = input.Events;
+            if (input.Active.HasValue) body["active"] = input.Active.Value;
+            body["context"] = new Dictionary<string, object> { { "platform", ResolvePlatform() } };
+            var response = await RequestAsync("PATCH", $"/api/v1/webhooks/{webhookId}", body);
+            return ParseUpdateWebhookResult(response);
+        }
+
+        /// <summary>
+        /// Delete a webhook.
+        /// </summary>
+        public async Task<DeleteWebhookResult> DeleteWebhookAsync(string webhookId)
+        {
+            var response = await RequestAsync("DELETE", $"/api/v1/webhooks/{webhookId}");
+            return new DeleteWebhookResult
+            {
+                Message = GetString(response, "message")
+            };
+        }
+
+        /// <summary>
+        /// Test a webhook by sending a test event.
+        /// </summary>
+        public async Task<TestWebhookResult> TestWebhookAsync(string webhookId)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
+            };
+            var response = await RequestAsync("POST", $"/api/v1/webhooks/{webhookId}/test", body);
+            return new TestWebhookResult
+            {
+                Message = GetString(response, "message"),
+                StatusCode = response.ContainsKey("status_code") ? (int?)Convert.ToInt32(response["status_code"]) : null
+            };
+        }
+
+        /// <summary>
+        /// Regenerate the secret for a webhook.
+        /// </summary>
+        public async Task<RegenerateSecretResult> RegenerateWebhookSecretAsync(string webhookId)
+        {
+            var body = new Dictionary<string, object>
+            {
+                { "context", new Dictionary<string, object> { { "platform", ResolvePlatform() } } }
+            };
+            var response = await RequestAsync("POST", $"/api/v1/webhooks/{webhookId}/secret", body);
+            return new RegenerateSecretResult
+            {
+                Message = GetString(response, "message"),
+                Secret = GetString(response, "secret")
+            };
+        }
+
+        // =====================================================================
+        // Pricing
+        // =====================================================================
+
+        /// <summary>
+        /// Get pricing plans overview.
+        /// </summary>
+        public async Task<PricingResult> GetPricingAsync()
+        {
+            var response = await RequestAsync("GET", "/api/v1/pricing");
+            return ParsePricingResult(response);
+        }
+
+        /// <summary>
+        /// Get detailed pricing information.
+        /// </summary>
+        public async Task<PricingDetailsResult> GetPricingDetailsAsync()
+        {
+            var response = await RequestAsync("GET", "/api/v1/pricing/details");
+            return ParsePricingDetailsResult(response);
+        }
+
+        // =====================================================================
+        // Usage
+        // =====================================================================
+
+        /// <summary>
+        /// Get usage history for the API key.
+        /// </summary>
+        public async Task<UsageHistoryResult> GetUsageHistoryAsync(int? days = null)
+        {
+            var query = days.HasValue ? $"?days={days.Value}" : "";
+            var response = await RequestAsync("GET", $"/api/v1/usage/history{query}");
+            return ParseUsageHistoryResult(response);
+        }
+
+        /// <summary>
+        /// Get usage breakdown by tool/endpoint.
+        /// </summary>
+        public async Task<UsageByToolResult> GetUsageByToolAsync(string date = null)
+        {
+            var query = date != null ? $"?date={date}" : "";
+            var response = await RequestAsync("GET", $"/api/v1/usage/tools{query}");
+            return ParseUsageByToolResult(response);
+        }
+
+        /// <summary>
+        /// Get monthly usage summary.
+        /// </summary>
+        public async Task<UsageMonthlyResult> GetUsageMonthlyAsync()
+        {
+            var response = await RequestAsync("GET", "/api/v1/usage/monthly");
+            return ParseUsageMonthlyResult(response);
+        }
+
+        // =====================================================================
         // Private Methods
         // =====================================================================
 
@@ -580,6 +815,8 @@ namespace Tuteliq
                 catch (AuthenticationException) { throw; }
                 catch (ValidationException) { throw; }
                 catch (NotFoundException) { throw; }
+                catch (QuotaExceededException) { throw; }
+                catch (TierAccessException) { throw; }
                 catch (Exception e)
                 {
                     lastError = e;
@@ -663,11 +900,93 @@ namespace Tuteliq
             {
                 400 => new ValidationException(message, details),
                 401 => new AuthenticationException(message, details),
+                402 => new QuotaExceededException(message, details),
+                403 => new TierAccessException(message, details),
                 404 => new NotFoundException(message, details),
                 429 => new RateLimitException(message, details),
                 >= 500 => new ServerException(message, status, details),
                 _ => new TuteliqException(message, details)
             };
+        }
+
+        private async Task<Dictionary<string, object>> MultipartRequestAsync(
+            string path,
+            List<IMultipartFormSection> formSections)
+        {
+            Exception lastError = null;
+
+            for (int attempt = 0; attempt < _maxRetries; attempt++)
+            {
+                try
+                {
+                    return await PerformMultipartRequestAsync(path, formSections);
+                }
+                catch (AuthenticationException) { throw; }
+                catch (ValidationException) { throw; }
+                catch (NotFoundException) { throw; }
+                catch (QuotaExceededException) { throw; }
+                catch (TierAccessException) { throw; }
+                catch (Exception e)
+                {
+                    lastError = e;
+                    if (attempt < _maxRetries - 1)
+                    {
+                        await Task.Delay((int)(_retryDelay * 1000 * (1 << attempt)));
+                    }
+                }
+            }
+
+            throw lastError ?? new TuteliqException("Request failed after retries");
+        }
+
+        private async Task<Dictionary<string, object>> PerformMultipartRequestAsync(
+            string path,
+            List<IMultipartFormSection> formSections)
+        {
+            var url = _baseUrl + path;
+
+            var boundary = UnityWebRequest.GenerateBoundary();
+            var formData = UnityWebRequest.SerializeFormSections(formSections, boundary);
+
+            using var request = new UnityWebRequest(url, "POST");
+            request.uploadHandler = new UploadHandlerRaw(formData);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Authorization", $"Bearer {_apiKey}");
+            request.SetRequestHeader("Content-Type", $"multipart/form-data; boundary={Encoding.UTF8.GetString(boundary)}");
+            request.timeout = (int)_timeout;
+
+            var operation = request.SendWebRequest();
+            while (!operation.isDone)
+                await Task.Yield();
+
+            LastRequestId = request.GetResponseHeader("x-request-id");
+
+            var limitStr = request.GetResponseHeader("x-monthly-limit");
+            var usedStr = request.GetResponseHeader("x-monthly-used");
+            var remainingStr = request.GetResponseHeader("x-monthly-remaining");
+
+            if (int.TryParse(limitStr, out int limit) &&
+                int.TryParse(usedStr, out int used) &&
+                int.TryParse(remainingStr, out int remaining))
+            {
+                Usage = new Usage { Limit = limit, Used = used, Remaining = remaining };
+            }
+
+            if (request.result == UnityWebRequest.Result.ConnectionError)
+                throw new NetworkException(request.error);
+
+            if (request.result == UnityWebRequest.Result.ProtocolError)
+                HandleErrorResponse(request);
+
+            var responseJson = request.downloadHandler.text;
+            return ParseJson(responseJson);
+        }
+
+        private static string ResolvePlatform(string platform = null)
+        {
+            if (!string.IsNullOrEmpty(platform))
+                return $"{platform} - {SdkIdentifier}";
+            return SdkIdentifier;
         }
 
         private Dictionary<string, object> ContextToDict(AnalysisContext context)
@@ -676,7 +995,7 @@ namespace Tuteliq
             if (!string.IsNullOrEmpty(context.Language)) dict["language"] = context.Language;
             if (!string.IsNullOrEmpty(context.AgeGroup)) dict["age_group"] = context.AgeGroup;
             if (!string.IsNullOrEmpty(context.Relationship)) dict["relationship"] = context.Relationship;
-            if (!string.IsNullOrEmpty(context.Platform)) dict["platform"] = context.Platform;
+            dict["platform"] = ResolvePlatform(context.Platform);
             return dict;
         }
 
@@ -838,6 +1157,230 @@ namespace Tuteliq
             };
         }
 
+        private VoiceAnalysisResult ParseVoiceAnalysisResult(Dictionary<string, object> data)
+        {
+            var result = new VoiceAnalysisResult
+            {
+                FileId = GetString(data, "file_id"),
+                Analysis = GetDict(data, "analysis"),
+                OverallRiskScore = GetNullableDouble(data, "overall_risk_score"),
+                OverallSeverity = GetString(data, "overall_severity"),
+                ExternalId = GetString(data, "external_id"),
+                CustomerId = GetString(data, "customer_id"),
+                Metadata = GetDict(data, "metadata")
+            };
+
+            if (data.ContainsKey("transcription") && data["transcription"] is Dictionary<string, object> transDict)
+            {
+                result.Transcription = new TranscriptionResult
+                {
+                    Text = GetString(transDict, "text"),
+                    Language = GetString(transDict, "language"),
+                    Duration = GetNullableDouble(transDict, "duration"),
+                    Segments = ParseTranscriptionSegments(transDict)
+                };
+            }
+
+            return result;
+        }
+
+        private List<TranscriptionSegment> ParseTranscriptionSegments(Dictionary<string, object> data)
+        {
+            var segments = new List<TranscriptionSegment>();
+            if (data.ContainsKey("segments") && data["segments"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> seg)
+                    {
+                        segments.Add(new TranscriptionSegment
+                        {
+                            Start = GetDouble(seg, "start"),
+                            End = GetDouble(seg, "end"),
+                            Text = GetString(seg, "text")
+                        });
+                    }
+                }
+            }
+            return segments;
+        }
+
+        private ImageAnalysisResult ParseImageAnalysisResult(Dictionary<string, object> data)
+        {
+            var result = new ImageAnalysisResult
+            {
+                FileId = GetString(data, "file_id"),
+                TextAnalysis = GetDict(data, "text_analysis"),
+                OverallRiskScore = GetNullableDouble(data, "overall_risk_score"),
+                OverallSeverity = GetString(data, "overall_severity"),
+                ExternalId = GetString(data, "external_id"),
+                CustomerId = GetString(data, "customer_id"),
+                Metadata = GetDict(data, "metadata")
+            };
+
+            if (data.ContainsKey("vision") && data["vision"] is Dictionary<string, object> visionDict)
+            {
+                result.Vision = new VisionResult
+                {
+                    ExtractedText = GetString(visionDict, "extracted_text"),
+                    VisualCategories = GetStringList(visionDict, "visual_categories"),
+                    VisualSeverity = GetString(visionDict, "visual_severity"),
+                    VisualConfidence = GetNullableDouble(visionDict, "visual_confidence"),
+                    VisualDescription = GetString(visionDict, "visual_description"),
+                    ContainsText = GetNullableBool(visionDict, "contains_text"),
+                    ContainsFaces = GetNullableBool(visionDict, "contains_faces")
+                };
+            }
+
+            return result;
+        }
+
+        private WebhookInfo ParseWebhookInfo(Dictionary<string, object> data)
+        {
+            return new WebhookInfo
+            {
+                Id = GetString(data, "id"),
+                Url = GetString(data, "url"),
+                Events = GetStringList(data, "events"),
+                Active = GetBool(data, "active"),
+                Secret = GetString(data, "secret"),
+                CreatedAt = GetString(data, "created_at"),
+                UpdatedAt = GetString(data, "updated_at")
+            };
+        }
+
+        private WebhookListResult ParseWebhookListResult(Dictionary<string, object> data)
+        {
+            var webhooks = new List<WebhookInfo>();
+            if (data.ContainsKey("webhooks") && data["webhooks"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        webhooks.Add(ParseWebhookInfo(dict));
+                }
+            }
+            return new WebhookListResult { Webhooks = webhooks };
+        }
+
+        private CreateWebhookResult ParseCreateWebhookResult(Dictionary<string, object> data)
+        {
+            var result = new CreateWebhookResult
+            {
+                Message = GetString(data, "message")
+            };
+            if (data.ContainsKey("webhook") && data["webhook"] is Dictionary<string, object> dict)
+                result.Webhook = ParseWebhookInfo(dict);
+            return result;
+        }
+
+        private UpdateWebhookResult ParseUpdateWebhookResult(Dictionary<string, object> data)
+        {
+            var result = new UpdateWebhookResult
+            {
+                Message = GetString(data, "message")
+            };
+            if (data.ContainsKey("webhook") && data["webhook"] is Dictionary<string, object> dict)
+                result.Webhook = ParseWebhookInfo(dict);
+            return result;
+        }
+
+        private PricingResult ParsePricingResult(Dictionary<string, object> data)
+        {
+            var plans = new List<PricingPlan>();
+            if (data.ContainsKey("plans") && data["plans"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                    {
+                        plans.Add(new PricingPlan
+                        {
+                            Name = GetString(dict, "name"),
+                            Price = GetString(dict, "price"),
+                            Messages = GetString(dict, "messages"),
+                            Features = GetStringList(dict, "features")
+                        });
+                    }
+                }
+            }
+            return new PricingResult { Plans = plans };
+        }
+
+        private PricingDetailsResult ParsePricingDetailsResult(Dictionary<string, object> data)
+        {
+            var plans = new List<PricingDetailPlan>();
+            if (data.ContainsKey("plans") && data["plans"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                    {
+                        plans.Add(new PricingDetailPlan
+                        {
+                            Name = GetString(dict, "name"),
+                            Tier = GetString(dict, "tier"),
+                            Price = GetDict(dict, "price"),
+                            Limits = GetDict(dict, "limits"),
+                            Features = GetDict(dict, "features"),
+                            Endpoints = GetStringList(dict, "endpoints")
+                        });
+                    }
+                }
+            }
+            return new PricingDetailsResult { Plans = plans };
+        }
+
+        private UsageHistoryResult ParseUsageHistoryResult(Dictionary<string, object> data)
+        {
+            var days = new List<UsageDay>();
+            if (data.ContainsKey("days") && data["days"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                    {
+                        days.Add(new UsageDay
+                        {
+                            Date = GetString(dict, "date"),
+                            TotalRequests = GetInt(dict, "total_requests"),
+                            SuccessRequests = GetInt(dict, "success_requests"),
+                            ErrorRequests = GetInt(dict, "error_requests")
+                        });
+                    }
+                }
+            }
+            return new UsageHistoryResult
+            {
+                ApiKeyId = GetString(data, "api_key_id"),
+                Days = days
+            };
+        }
+
+        private UsageByToolResult ParseUsageByToolResult(Dictionary<string, object> data)
+        {
+            return new UsageByToolResult
+            {
+                Date = GetString(data, "date"),
+                Tools = GetIntDict(data, "tools"),
+                Endpoints = GetIntDict(data, "endpoints")
+            };
+        }
+
+        private UsageMonthlyResult ParseUsageMonthlyResult(Dictionary<string, object> data)
+        {
+            return new UsageMonthlyResult
+            {
+                Tier = GetString(data, "tier"),
+                TierDisplayName = GetString(data, "tier_display_name"),
+                Billing = GetDict(data, "billing"),
+                UsageInfo = GetDict(data, "usage"),
+                RateLimit = GetDict(data, "rate_limit"),
+                Recommendations = GetDict(data, "recommendations"),
+                Links = GetDict(data, "links")
+            };
+        }
+
         private static string GetString(Dictionary<string, object> data, string key)
         {
             return data.TryGetValue(key, out var value) ? value?.ToString() : null;
@@ -880,6 +1423,68 @@ namespace Tuteliq
             if (data.TryGetValue(key, out var value) && value is Dictionary<string, object> dict)
                 return dict;
             return null;
+        }
+
+        private static int GetInt(Dictionary<string, object> data, string key)
+        {
+            if (data.TryGetValue(key, out var value))
+            {
+                if (value is long l) return (int)l;
+                if (value is int i) return i;
+                if (value is double d) return (int)d;
+                if (int.TryParse(value?.ToString(), out var parsed)) return parsed;
+            }
+            return 0;
+        }
+
+        private static double GetDouble(Dictionary<string, object> data, string key)
+        {
+            if (data.TryGetValue(key, out var value))
+            {
+                if (value is double d) return d;
+                if (value is float f) return f;
+                if (value is long l) return l;
+                if (double.TryParse(value?.ToString(), out var parsed)) return parsed;
+            }
+            return 0.0;
+        }
+
+        private static double? GetNullableDouble(Dictionary<string, object> data, string key)
+        {
+            if (data.TryGetValue(key, out var value) && value != null)
+            {
+                if (value is double d) return d;
+                if (value is float f) return f;
+                if (value is long l) return l;
+                if (double.TryParse(value.ToString(), out var parsed)) return parsed;
+            }
+            return null;
+        }
+
+        private static bool? GetNullableBool(Dictionary<string, object> data, string key)
+        {
+            if (data.TryGetValue(key, out var value) && value != null)
+            {
+                if (value is bool b) return b;
+                if (bool.TryParse(value.ToString(), out var parsed)) return parsed;
+            }
+            return null;
+        }
+
+        private static Dictionary<string, int> GetIntDict(Dictionary<string, object> data, string key)
+        {
+            var result = new Dictionary<string, int>();
+            if (data.TryGetValue(key, out var value) && value is Dictionary<string, object> dict)
+            {
+                foreach (var kvp in dict)
+                {
+                    if (kvp.Value is long l) result[kvp.Key] = (int)l;
+                    else if (kvp.Value is int i) result[kvp.Key] = i;
+                    else if (kvp.Value is double d) result[kvp.Key] = (int)d;
+                    else if (int.TryParse(kvp.Value?.ToString(), out var parsed)) result[kvp.Key] = parsed;
+                }
+            }
+            return result;
         }
 
         [Serializable]

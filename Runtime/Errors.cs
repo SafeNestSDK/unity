@@ -75,4 +75,20 @@ namespace Tuteliq
     {
         public NetworkException(string message, object details = null) : base(message, details) { }
     }
+
+    /// <summary>
+    /// Thrown when the usage quota has been exceeded.
+    /// </summary>
+    public class QuotaExceededException : TuteliqException
+    {
+        public QuotaExceededException(string message, object details = null) : base(message, details) { }
+    }
+
+    /// <summary>
+    /// Thrown when the current tier does not have access to the requested feature.
+    /// </summary>
+    public class TierAccessException : TuteliqException
+    {
+        public TierAccessException(string message, object details = null) : base(message, details) { }
+    }
 }
