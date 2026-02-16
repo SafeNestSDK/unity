@@ -211,6 +211,10 @@ namespace Tuteliq
             else if (actions.Contains("monitor")) recommendedAction = "monitor";
             else recommendedAction = "none";
 
+            int? totalCredits = null;
+            if (bullyingResult?.CreditsUsed != null || unsafeResult?.CreditsUsed != null)
+                totalCredits = (bullyingResult?.CreditsUsed ?? 0) + (unsafeResult?.CreditsUsed ?? 0);
+
             return new AnalyzeResult
             {
                 RiskLevel = riskLevel,
@@ -219,6 +223,7 @@ namespace Tuteliq
                 Bullying = bullyingResult,
                 Unsafe = unsafeResult,
                 RecommendedAction = recommendedAction,
+                CreditsUsed = totalCredits,
                 ExternalId = externalId,
                 CustomerId = customerId,
                 Metadata = metadata
@@ -1074,6 +1079,7 @@ namespace Tuteliq
                 Rationale = GetString(data, "rationale"),
                 RiskScore = GetFloat(data, "risk_score"),
                 RecommendedAction = GetString(data, "recommended_action"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1090,6 +1096,7 @@ namespace Tuteliq
                 Rationale = GetString(data, "rationale"),
                 RiskScore = GetFloat(data, "risk_score"),
                 RecommendedAction = GetString(data, "recommended_action"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1107,6 +1114,7 @@ namespace Tuteliq
                 Rationale = GetString(data, "rationale"),
                 RiskScore = GetFloat(data, "risk_score"),
                 RecommendedAction = GetString(data, "recommended_action"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1122,6 +1130,7 @@ namespace Tuteliq
                 Intensity = GetFloat(data, "intensity"),
                 ConcerningPatterns = GetStringList(data, "concerning_patterns"),
                 RecommendedFollowup = GetString(data, "recommended_followup"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1136,6 +1145,7 @@ namespace Tuteliq
                 Tone = GetString(data, "tone"),
                 Resources = GetStringList(data, "resources"),
                 Urgency = GetString(data, "urgency"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1151,6 +1161,7 @@ namespace Tuteliq
                 Timeline = GetStringList(data, "timeline"),
                 KeyEvidence = GetStringList(data, "key_evidence"),
                 RecommendedNextSteps = GetStringList(data, "recommended_next_steps"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1165,6 +1176,7 @@ namespace Tuteliq
                 Analysis = GetDict(data, "analysis"),
                 OverallRiskScore = GetNullableDouble(data, "overall_risk_score"),
                 OverallSeverity = GetString(data, "overall_severity"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1213,6 +1225,7 @@ namespace Tuteliq
                 TextAnalysis = GetDict(data, "text_analysis"),
                 OverallRiskScore = GetNullableDouble(data, "overall_risk_score"),
                 OverallSeverity = GetString(data, "overall_severity"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
                 ExternalId = GetString(data, "external_id"),
                 CustomerId = GetString(data, "customer_id"),
                 Metadata = GetDict(data, "metadata")
@@ -1447,6 +1460,18 @@ namespace Tuteliq
                 if (double.TryParse(value?.ToString(), out var parsed)) return parsed;
             }
             return 0.0;
+        }
+
+        private static int? GetNullableInt(Dictionary<string, object> data, string key)
+        {
+            if (data.TryGetValue(key, out var value) && value != null)
+            {
+                if (value is int i) return i;
+                if (value is long l) return (int)l;
+                if (value is double d) return (int)d;
+                if (int.TryParse(value.ToString(), out var parsed)) return parsed;
+            }
+            return null;
         }
 
         private static double? GetNullableDouble(Dictionary<string, object> data, string key)

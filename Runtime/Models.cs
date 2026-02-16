@@ -195,6 +195,7 @@ namespace Tuteliq
         public string Rationale;
         public float RiskScore;
         public string RecommendedAction;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -212,6 +213,7 @@ namespace Tuteliq
         public string Rationale;
         public float RiskScore;
         public string RecommendedAction;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -230,6 +232,7 @@ namespace Tuteliq
         public string Rationale;
         public float RiskScore;
         public string RecommendedAction;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -247,6 +250,7 @@ namespace Tuteliq
         public string RecommendedAction;
         public BullyingResult Bullying;
         public UnsafeResult Unsafe;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -263,6 +267,7 @@ namespace Tuteliq
         public float Intensity;
         public List<string> ConcerningPatterns;
         public string RecommendedFollowup;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -278,6 +283,7 @@ namespace Tuteliq
         public string Tone;
         public List<string> Resources;
         public string Urgency;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -294,6 +300,7 @@ namespace Tuteliq
         public List<string> Timeline;
         public List<string> KeyEvidence;
         public List<string> RecommendedNextSteps;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -485,6 +492,7 @@ namespace Tuteliq
         public Dictionary<string, object> Analysis;
         public double? OverallRiskScore;
         public string OverallSeverity;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;
@@ -514,6 +522,7 @@ namespace Tuteliq
         public Dictionary<string, object> TextAnalysis;
         public double? OverallRiskScore;
         public string OverallSeverity;
+        public int? CreditsUsed;
         public string ExternalId;
         public string CustomerId;
         public Dictionary<string, object> Metadata;

@@ -232,7 +232,25 @@ if (client.Usage != null)
 
 // Request metadata
 Debug.Log($"Request ID: {client.LastRequestId}");
+
+// Credits consumed per request
+Debug.Log($"Credits Used: {result.CreditsUsed}");
 ```
+
+### Credits
+
+| Method | Credits |
+|--------|---------|
+| `DetectBullyingAsync()` | 1 |
+| `DetectUnsafeAsync()` | 1 |
+| `DetectGroomingAsync()` | 1 per 10 messages |
+| `AnalyzeEmotionsAsync()` | 1 per 10 messages |
+| `GetActionPlanAsync()` | 2 |
+| `GenerateReportAsync()` | 3 |
+| `AnalyzeVoiceAsync()` | 5 |
+| `AnalyzeImageAsync()` | 3 |
+
+Every result type includes a `CreditsUsed` field showing the credits consumed by that request.
 
 ---
 
