@@ -125,6 +125,13 @@ if (result.GroomingRisk == GroomingRisk.High)
 {
     Debug.Log($"Flags: {string.Join(", ", result.Flags)}");
 }
+
+// Per-message breakdown (optional, returned on conversation-aware endpoints)
+if (result.MessageAnalysis != null)
+{
+    foreach (var m in result.MessageAnalysis)
+        Debug.Log($"Message {m.MessageIndex}: risk={m.RiskScore}, flags={string.Join(", ", m.Flags)}, summary={m.Summary}");
+}
 ```
 
 ### Unsafe Content Detection
