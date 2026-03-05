@@ -201,6 +201,43 @@ Debug.Log($"Summary: {report.Summary}");
 Debug.Log($"Risk: {report.RiskLevel}");
 ```
 
+### Age Verification (Beta)
+
+> **Pro tier ($99/mo)+ required** — 5 credits per request — `POST /v1/verification/age`
+
+```csharp
+var ageResult = await client.VerifyAgeAsync(new VerifyAgeRequest
+{
+    Document = File.ReadAllBytes("id-front.jpg"),
+    Selfie = File.ReadAllBytes("selfie.jpg"),
+    Method = VerificationMethod.Combined
+});
+
+Debug.Log($"Verified: {ageResult.Verified}");         // True
+Debug.Log($"Estimated Age: {ageResult.EstimatedAge}"); // 15
+Debug.Log($"Age Range: {ageResult.AgeRange}");         // "13-15"
+Debug.Log($"Is Minor: {ageResult.IsMinor}");           // True
+Debug.Log($"Confidence: {ageResult.Confidence}");      // 0.97
+```
+
+### Identity Verification (Beta)
+
+> **Business tier ($349/mo)+ required** — 10 credits per request — `POST /v1/verification/identity`
+
+```csharp
+var identityResult = await client.VerifyIdentityAsync(new VerifyIdentityRequest
+{
+    Document = File.ReadAllBytes("id-front.jpg"),
+    Selfie = File.ReadAllBytes("selfie.jpg")
+});
+
+Debug.Log($"Verified: {identityResult.Verified}");                     // True
+Debug.Log($"Match Score: {identityResult.MatchScore}");                // 0.98
+Debug.Log($"Liveness Passed: {identityResult.LivenessPassed}");        // True
+Debug.Log($"Doc Authenticated: {identityResult.DocumentAuthenticated}"); // True
+Debug.Log($"Is Minor: {identityResult.IsMinor}");                     // False
+```
+
 ---
 
 ## Tracking Fields
@@ -257,6 +294,8 @@ Debug.Log($"Credits Used: {result.CreditsUsed}");
 | `GenerateReportAsync()` | 3 |
 | `AnalyzeVoiceAsync()` | 5 |
 | `AnalyzeImageAsync()` | 3 |
+| `VerifyAgeAsync()` | 5 |
+| `VerifyIdentityAsync()` | 10 |
 
 Every result type includes a `CreditsUsed` field showing the credits consumed by that request.
 

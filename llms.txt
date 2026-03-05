@@ -21,6 +21,8 @@ var result = await client.DetectUnsafeAsync(text: "content to check", ageGroup: 
 - All 20+ Tuteliq API endpoints
 - 16+ detection categories (KOSA compliant)
 - Age group calibration for young players
+- Age Verification (Beta) — POST /v1/verification/age — 5 credits — Pro tier ($99/mo)+
+- Identity Verification (Beta) — POST /v1/verification/identity — 10 credits — Business tier ($349/mo)+
 
 ## Links
 - Website: https://tuteliq.ai
