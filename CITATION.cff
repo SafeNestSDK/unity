@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: Tuteliq Unity SDK
+message: "If you use this software, please cite it using this metadata."
+type: software
+authors:
+  - name: Tuteliq
+    website: https://tuteliq.ai
+repository-code: https://github.com/Tuteliq/unity
+url: https://tuteliq.ai
+abstract: >-
+  Official Unity SDK for Tuteliq — AI-powered child safety API for in-game chat moderation and player protection
+keywords:
+  - child safety
+  - Unity
+  - game development
+  - content moderation
+  - KOSA
+  - SDK
+  - UPM
+  - chat moderation
+  - online safety
+  - age verification
+  - identity verification
+license: MIT

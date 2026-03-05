@@ -1,0 +1,30 @@
+# Tuteliq Unity SDK
+
+> Official Unity SDK for Tuteliq — AI-powered child safety API for in-game chat moderation and player protection.
+
+## What is this?
+A Unity package for the Tuteliq child safety API. Moderate in-game chat, detect bullying, grooming, and harmful content to protect young players. Works with Unity 2021.3+ and .NET Standard 2.1.
+
+## Install
+Add via Unity Package Manager:
+https://github.com/tuteliq/tuteliq-unity.git
+
+## Quick Start
+using Tuteliq;
+var client = new TuteliqClient(apiKey: Environment.GetEnvironmentVariable("TUTELIQ_API_KEY"));
+var result = await client.DetectUnsafeAsync(text: "content to check", ageGroup: "13-15");
+
+## Key Features
+- Unity 2021.3+ support
+- Coroutine and async/await patterns
+- In-game chat moderation
+- All 20+ Tuteliq API endpoints
+- 16+ detection categories (KOSA compliant)
+- Age group calibration for young players
+- Age Verification (Beta) — POST /v1/verification/age — 5 credits — Pro tier ($99/mo)+
+- Identity Verification (Beta) — POST /v1/verification/identity — 10 credits — Business tier ($349/mo)+
+
+## Links
+- Website: https://tuteliq.ai
+- Documentation: https://docs.tuteliq.ai
+- GitHub: https://github.com/Tuteliq/unity
