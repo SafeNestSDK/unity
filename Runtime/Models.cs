@@ -215,6 +215,7 @@ namespace Tuteliq
         public string Rationale;
         public float RiskScore;
         public string RecommendedAction;
+        public List<MessageAnalysis> MessageAnalysis;
         public string Language;
         public string LanguageStatus;
         public int? CreditsUsed;
@@ -568,6 +569,18 @@ namespace Tuteliq
     }
 
     /// <summary>
+    /// Per-message analysis from conversation-aware detection.
+    /// </summary>
+    [Serializable]
+    public class MessageAnalysis
+    {
+        public int MessageIndex;
+        public float RiskScore;
+        public List<string> Flags;
+        public string Summary;
+    }
+
+    /// <summary>
     /// A detected category within a detection result.
     /// </summary>
     [Serializable]
@@ -619,6 +632,7 @@ namespace Tuteliq
         public string LanguageStatus;
         public List<DetectionEvidence> Evidence;
         public AgeCalibration AgeCalibration;
+        public List<MessageAnalysis> MessageAnalysis;
         public int? CreditsUsed;
         public double? ProcessingTimeMs;
         public string ExternalId;
