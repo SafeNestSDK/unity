@@ -688,6 +688,94 @@ namespace Tuteliq
     }
 
     // =========================================================================
+    // Document Analysis
+    // =========================================================================
+
+    /// <summary>
+    /// Summary of text extraction methods used across the document.
+    /// </summary>
+    [Serializable]
+    public class DocumentExtractionSummary
+    {
+        public int TextLayerPages;
+        public int OcrPages;
+        public int FailedPages;
+        public double AverageOcrConfidence;
+    }
+
+    /// <summary>
+    /// Detection result for a single endpoint on a single page.
+    /// </summary>
+    [Serializable]
+    public class DocumentPageEndpointResult
+    {
+        public string Endpoint;
+        public bool Detected;
+        public double Severity;
+        public double Confidence;
+        public double RiskScore;
+        public string Level;
+        public List<DetectionCategory> Categories;
+        public List<DetectionEvidence> Evidence;
+        public string RecommendedAction;
+        public string Rationale;
+        public string DetectedLanguage;
+    }
+
+    /// <summary>
+    /// Analysis results for a single page of the document.
+    /// </summary>
+    [Serializable]
+    public class DocumentPageResult
+    {
+        public int PageNumber;
+        public string TextPreview;
+        public string ExtractionMethod;
+        public double? OcrConfidence;
+        public List<DocumentPageEndpointResult> Results;
+        public double PageRiskScore;
+        public string PageSeverity;
+    }
+
+    /// <summary>
+    /// A page that was flagged with risk score >= 0.3.
+    /// </summary>
+    [Serializable]
+    public class DocumentFlaggedPage
+    {
+        public int PageNumber;
+        public double RiskScore;
+        public string Severity;
+        public List<string> DetectedEndpoints;
+    }
+
+    /// <summary>
+    /// Result of document analysis.
+    /// </summary>
+    [Serializable]
+    public class DocumentAnalysisResult
+    {
+        public string FileId;
+        public string DocumentHash;
+        public int TotalPages;
+        public int PagesAnalyzed;
+        public DocumentExtractionSummary ExtractionSummary;
+        public List<DocumentPageResult> PageResults;
+        public double OverallRiskScore;
+        public string OverallSeverity;
+        public List<string> DetectedEndpoints;
+        public List<DocumentFlaggedPage> FlaggedPages;
+        public int? CreditsUsed;
+        public double? ProcessingTimeMs;
+        public string Language;
+        public string LanguageStatus;
+        public Dictionary<string, object> Support;
+        public string ExternalId;
+        public string CustomerId;
+        public Dictionary<string, object> Metadata;
+    }
+
+    // =========================================================================
     // Webhooks
     // =========================================================================
 

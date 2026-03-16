@@ -194,6 +194,31 @@ Debug.Log($"Summary: {report.Summary}");
 Debug.Log($"Risk: {report.RiskLevel}");
 ```
 
+### Document Analysis
+
+Analyze PDF documents page-by-page against multiple detection endpoints:
+
+```csharp
+byte[] pdfBytes = File.ReadAllBytes("report.pdf");
+
+var result = await client.AnalyzeDocumentAsync(
+    file: pdfBytes,
+    filename: "report.pdf",
+    endpoints: new List<string> { "unsafe", "coercive-control", "radicalisation" }
+);
+
+Debug.Log($"Pages analyzed: {result.PagesAnalyzed}/{result.TotalPages}");
+Debug.Log($"Overall severity: {result.OverallSeverity}");
+Debug.Log($"Risk score: {result.OverallRiskScore}");
+Debug.Log($"Flagged pages: {result.FlaggedPages.Count}");
+Debug.Log($"Credits used: {result.CreditsUsed}");
+
+foreach (var page in result.FlaggedPages)
+{
+    Debug.Log($"Page {page.PageNumber}: {page.Severity} ({string.Join(", ", page.DetectedEndpoints)})");
+}
+```
+
 ### Age Verification (Beta)
 
 > **Pro tier ($99/mo)+ required** — 5 credits per request — `POST /v1/verification/age`
@@ -287,6 +312,7 @@ Debug.Log($"Credits Used: {result.CreditsUsed}");
 | `GenerateReportAsync()` | 3 |
 | `AnalyzeVoiceAsync()` | 5 |
 | `AnalyzeImageAsync()` | 3 |
+| `AnalyzeDocumentAsync()` | 1 per page per endpoint |
 | `VerifyAgeAsync()` | 5 |
 | `VerifyIdentityAsync()` | 10 |
 

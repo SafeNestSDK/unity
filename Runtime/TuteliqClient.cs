@@ -800,6 +800,54 @@ namespace Tuteliq
         }
 
         // =====================================================================
+        // Document Analysis
+        // =====================================================================
+
+        /// <summary>
+        /// Analyze a PDF document for safety and compliance concerns.
+        /// Each page is analyzed independently against the selected detection endpoints.
+        /// </summary>
+        /// <param name="file">PDF file bytes.</param>
+        /// <param name="filename">Original filename (e.g., "report.pdf").</param>
+        /// <param name="endpoints">Detection endpoints to run on each page (e.g., "unsafe", "coercive-control").</param>
+        /// <param name="fileId">Customer-provided file reference ID (echoed in response).</param>
+        /// <param name="ageGroup">Age group for calibrated analysis.</param>
+        /// <param name="language">Language hint (ISO 639-1).</param>
+        /// <param name="platform">Platform name.</param>
+        /// <param name="supportThreshold">Minimum severity to include crisis helplines (low/medium/high/critical).</param>
+        /// <param name="externalId">External tracking ID.</param>
+        /// <param name="customerId">Customer ID for multi-tenant routing (max 255 chars).</param>
+        /// <param name="metadata">Custom metadata dictionary.</param>
+        public async Task<DocumentAnalysisResult> AnalyzeDocumentAsync(
+            byte[] file,
+            string filename,
+            List<string> endpoints = null,
+            string fileId = null,
+            string ageGroup = null,
+            string language = null,
+            string platform = null,
+            string supportThreshold = null,
+            string externalId = null,
+            string customerId = null,
+            Dictionary<string, object> metadata = null)
+        {
+            var formSections = new List<IMultipartFormSection>();
+            formSections.Add(new MultipartFormFileSection("file", file, filename, "application/octet-stream"));
+            formSections.Add(new MultipartFormDataSection("platform", ResolvePlatform(platform)));
+            if (endpoints != null) formSections.Add(new MultipartFormDataSection("endpoints", MiniJson.Serialize(endpoints)));
+            if (fileId != null) formSections.Add(new MultipartFormDataSection("file_id", fileId));
+            if (ageGroup != null) formSections.Add(new MultipartFormDataSection("age_group", ageGroup));
+            if (language != null) formSections.Add(new MultipartFormDataSection("language", language));
+            if (supportThreshold != null) formSections.Add(new MultipartFormDataSection("support_threshold", supportThreshold));
+            if (externalId != null) formSections.Add(new MultipartFormDataSection("external_id", externalId));
+            if (customerId != null) formSections.Add(new MultipartFormDataSection("customer_id", customerId));
+            if (metadata != null) formSections.Add(new MultipartFormDataSection("metadata", MiniJson.Serialize(metadata)));
+
+            var data = await MultipartRequestAsync("/api/v1/safety/document", formSections);
+            return ParseDocumentAnalysisResult(data);
+        }
+
+        // =====================================================================
         // Webhooks
         // =====================================================================
 
@@ -1593,6 +1641,143 @@ namespace Tuteliq
                 }
             }
             result.SafetyFindings = findings;
+
+            return result;
+        }
+
+        private DocumentExtractionSummary ParseDocumentExtractionSummary(Dictionary<string, object> data)
+        {
+            return new DocumentExtractionSummary
+            {
+                TextLayerPages = GetInt(data, "text_layer_pages"),
+                OcrPages = GetInt(data, "ocr_pages"),
+                FailedPages = GetInt(data, "failed_pages"),
+                AverageOcrConfidence = GetDouble(data, "average_ocr_confidence")
+            };
+        }
+
+        private DocumentPageEndpointResult ParseDocumentPageEndpointResult(Dictionary<string, object> data)
+        {
+            var result = new DocumentPageEndpointResult
+            {
+                Endpoint = GetString(data, "endpoint"),
+                Detected = GetBool(data, "detected"),
+                Severity = GetDouble(data, "severity"),
+                Confidence = GetDouble(data, "confidence"),
+                RiskScore = GetDouble(data, "risk_score"),
+                Level = GetString(data, "level"),
+                RecommendedAction = GetString(data, "recommended_action"),
+                Rationale = GetString(data, "rationale"),
+                DetectedLanguage = GetString(data, "detected_language")
+            };
+
+            var categories = new List<DetectionCategory>();
+            if (data.ContainsKey("categories") && data["categories"] is IList<object> catList)
+            {
+                foreach (var item in catList)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        categories.Add(ParseDetectionCategory(dict));
+                }
+            }
+            result.Categories = categories;
+
+            var evidence = new List<DetectionEvidence>();
+            if (data.ContainsKey("evidence") && data["evidence"] is IList<object> evList)
+            {
+                foreach (var item in evList)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        evidence.Add(ParseDetectionEvidence(dict));
+                }
+            }
+            result.Evidence = evidence;
+
+            return result;
+        }
+
+        private DocumentPageResult ParseDocumentPageResult(Dictionary<string, object> data)
+        {
+            var result = new DocumentPageResult
+            {
+                PageNumber = GetInt(data, "page_number"),
+                TextPreview = GetString(data, "text_preview"),
+                ExtractionMethod = GetString(data, "extraction_method"),
+                OcrConfidence = GetNullableDouble(data, "ocr_confidence"),
+                PageRiskScore = GetDouble(data, "page_risk_score"),
+                PageSeverity = GetString(data, "page_severity")
+            };
+
+            var results = new List<DocumentPageEndpointResult>();
+            if (data.ContainsKey("results") && data["results"] is IList<object> list)
+            {
+                foreach (var item in list)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        results.Add(ParseDocumentPageEndpointResult(dict));
+                }
+            }
+            result.Results = results;
+
+            return result;
+        }
+
+        private DocumentFlaggedPage ParseDocumentFlaggedPage(Dictionary<string, object> data)
+        {
+            return new DocumentFlaggedPage
+            {
+                PageNumber = GetInt(data, "page_number"),
+                RiskScore = GetDouble(data, "risk_score"),
+                Severity = GetString(data, "severity"),
+                DetectedEndpoints = GetStringList(data, "detected_endpoints")
+            };
+        }
+
+        private DocumentAnalysisResult ParseDocumentAnalysisResult(Dictionary<string, object> data)
+        {
+            var result = new DocumentAnalysisResult
+            {
+                FileId = GetString(data, "file_id"),
+                DocumentHash = GetString(data, "document_hash"),
+                TotalPages = GetInt(data, "total_pages"),
+                PagesAnalyzed = GetInt(data, "pages_analyzed"),
+                OverallRiskScore = GetDouble(data, "overall_risk_score"),
+                OverallSeverity = GetString(data, "overall_severity"),
+                DetectedEndpoints = GetStringList(data, "detected_endpoints"),
+                CreditsUsed = GetNullableInt(data, "credits_used"),
+                ProcessingTimeMs = GetNullableDouble(data, "processing_time_ms"),
+                Language = GetString(data, "language"),
+                LanguageStatus = GetString(data, "language_status"),
+                Support = GetDict(data, "support"),
+                ExternalId = GetString(data, "external_id"),
+                CustomerId = GetString(data, "customer_id"),
+                Metadata = GetDict(data, "metadata")
+            };
+
+            if (data.ContainsKey("extraction_summary") && data["extraction_summary"] is Dictionary<string, object> esDict)
+                result.ExtractionSummary = ParseDocumentExtractionSummary(esDict);
+
+            var pageResults = new List<DocumentPageResult>();
+            if (data.ContainsKey("page_results") && data["page_results"] is IList<object> prList)
+            {
+                foreach (var item in prList)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        pageResults.Add(ParseDocumentPageResult(dict));
+                }
+            }
+            result.PageResults = pageResults;
+
+            var flaggedPages = new List<DocumentFlaggedPage>();
+            if (data.ContainsKey("flagged_pages") && data["flagged_pages"] is IList<object> fpList)
+            {
+                foreach (var item in fpList)
+                {
+                    if (item is Dictionary<string, object> dict)
+                        flaggedPages.Add(ParseDocumentFlaggedPage(dict));
+                }
+            }
+            result.FlaggedPages = flaggedPages;
 
             return result;
         }
